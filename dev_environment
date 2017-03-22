@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+# DB
 export TIPS_DB_USER=dbuser
 export TIPS_DB_PASS=5555
 export TIPS_DB=tips
 export TIPS_DB_SCHEMA=tips 
 export TIPS_DB_HOSTNAME=localhost 
 export TIPS_DB_PORT=15422
-# Below should be set if postgres is to be run locally and not as a service
+# Should be set if postgres is to be run locally and not as a service
 export TIPS_DB_DIR=./data
+
+# App
+export TIPS_SECRET=bananas
