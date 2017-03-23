@@ -3,26 +3,55 @@ package controllers
 import javax.inject.Inject
 
 import dto.DTOs._
-import play.api.libs.json.{JsError, Json, Reads}
 import play.api.mvc._
 import service.TipsService
-import scala.concurrent.ExecutionContext.Implicits.global
+import controllers.SerializationUtil._
 
-/**
- * This controller creates an `Action` to handle HTTP requests to the
- * application's home page.
- */
+
 class TipsController @Inject()(tipsService: TipsService) extends Controller {
 
-  // This helper parses and validates JSON using the implicit `placeReads`
-  // above, returning errors if the parsed json fails validation.
-  def validateJson[A : Reads] = BodyParsers.parse.json.validate(
-    _.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)))
-  )
+  def getTips = Action.async { request =>
+    serialize(tipsService.getTips)
+  }
 
+  def newTip = Action.async(validateJson[TipRequest]) { request =>
+    serialize(tipsService.newTip(request.body))
+  }
 
-  def newTip = Action.async(validateJson[NewTip]) { implicit request =>
-    tipsService.newTip(request.body) map {resp => Ok(Json.toJson(resp))}
+  def getTip(id: Long, includeComments: Boolean) = Action.async { request =>
+    if (includeComments) {
+      serialize(tipsService.getTip(id))
+    } else {
+      serialize(tipsService.getTipNoComment(id))
+    }
+  }
+
+  def updateTip(id: Long) = Action.async(validateJson[TipRequest]) { request =>
+    serialize(tipsService.updateTip(id, request.body))
+  }
+
+  def getComments(id: Long) = Action.async { implicit request =>
+    serialize(tipsService.getComments(id))
+  }
+
+  def newComment(id: Long) = Action.async(validateJson[CommentRequest]) { request =>
+    serialize(tipsService.newComment(id, request.body))
+  }
+
+  def getTipHistory(id: Long) = Action.async { request =>
+    serialize(tipsService.getTipHistory(id))
+  }
+
+  def getComment(id: Long) = Action.async { request =>
+    serialize(tipsService.getComment(id))
+  }
+
+  def getCommentHistory(id: Long) = Action.async { request =>
+    serialize(tipsService.getCommentHistory(id))
+  }
+
+  def updateComment(id: Long) = Action.async(validateJson[CommentRequest]) { request =>
+    serialize(tipsService.updateComment(id, request.body))
   }
 
 

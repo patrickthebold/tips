@@ -3,6 +3,18 @@
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
 
-# An example controller showing a sample home page
-GET     /                           controllers.Default.todo
+GET     /tips                       controllers.TipsController.getTips
+
 POST    /tip                        controllers.TipsController.newTip
+GET     /tip/:id                    controllers.TipsController.getTip(id: Long, includeComments: Boolean ?= true)
+PATCH   /tip/:id                    controllers.TipsController.updateTip(id: Long)
+GET     /tip/:id/comments           controllers.TipsController.getComments(id: Long)
+POST    /tip/:id/comment            controllers.TipsController.newComment
+GET     /tip/:id/history            controllers.TipsController.getTipHistory(id: Long)
+
+GET     /comment/:id                controllers.TipsController.getComment(id: Long)
+PATCH   /comment/:id                controllers.TipsController.updateComment(id: Long)
+GET     /comment/:id/history        controllers.TipsController.getCommentHistory(id: Long)
+
+POST    /login                      controllers.UserController.login
+POST    /newUser                    controllers.UserController.newUser
