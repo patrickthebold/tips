@@ -2,56 +2,60 @@ package controllers
 
 import javax.inject.Inject
 
+import controllers.SerializationUtil._
 import dto.DTOs._
 import play.api.mvc._
 import service.TipsService
-import controllers.SerializationUtil._
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 
-class TipsController @Inject()(tipsService: TipsService) extends Controller {
 
-  def getTips = Action.async { request =>
-    serialize(tipsService.getTips)
+
+class TipsController @Inject()(tipsService: TipsService, sessionUtil: SessionUtil) extends Controller {
+
+
+  def getTips = sessionUtil.Authenticated.async { implicit request =>
+    tipsService.getTips map serialize[Seq[TipNoComment]]
   }
 
-  def newTip = Action.async(validateJson[TipRequest]) { request =>
-    serialize(tipsService.newTip(request.body))
+  def newTip = sessionUtil.Authenticated.async(validateJson[TipRequest]) { implicit request =>
+    tipsService.newTip(request.body, request.user)  map serialize[NewTipResponse]
   }
 
-  def getTip(id: Long, includeComments: Boolean) = Action.async { request =>
+  def getTip(id: Long, includeComments: Boolean) = sessionUtil.Authenticated.async { implicit request =>
     if (includeComments) {
-      serialize(tipsService.getTip(id))
+      tipsService.getTip(id) map serialize[Option[Tip]]
     } else {
-      serialize(tipsService.getTipNoComment(id))
+      tipsService.getTipNoComment(id) map serialize[Option[TipNoComment]]
     }
   }
 
-  def updateTip(id: Long) = Action.async(validateJson[TipRequest]) { request =>
-    serialize(tipsService.updateTip(id, request.body))
+  def updateTip(id: Long) = sessionUtil.Authenticated.async(validateJson[TipRequest]) { implicit request =>
+    tipsService.updateTip(id, request.body, request.user)  map serialize
   }
 
-  def getComments(id: Long) = Action.async { implicit request =>
-    serialize(tipsService.getComments(id))
+  def getComments(id: Long) = sessionUtil.Authenticated.async { implicit request =>
+    tipsService.getComments(id) map serialize[Option[Seq[Comment]]]
   }
 
-  def newComment(id: Long) = Action.async(validateJson[CommentRequest]) { request =>
-    serialize(tipsService.newComment(id, request.body))
+  def newComment(id: Long) = sessionUtil.Authenticated.async(validateJson[CommentRequest]) { implicit request =>
+    tipsService.newComment(id, request.body) map serialize[Option[NewCommentResponse]]
   }
 
-  def getTipHistory(id: Long) = Action.async { request =>
-    serialize(tipsService.getTipHistory(id))
+  def getTipHistory(id: Long) = sessionUtil.Authenticated.async { implicit request =>
+    tipsService.getTipHistory(id) map serialize[Option[TipHistory]]
   }
 
-  def getComment(id: Long) = Action.async { request =>
-    serialize(tipsService.getComment(id))
+  def getComment(id: Long) = sessionUtil.Authenticated.async { implicit request =>
+    tipsService.getComment(id) map serialize[Option[StandAloneComment]]
   }
 
-  def getCommentHistory(id: Long) = Action.async { request =>
-    serialize(tipsService.getCommentHistory(id))
+  def getCommentHistory(id: Long) = sessionUtil.Authenticated.async { implicit request_ =>
+    tipsService.getCommentHistory(id) map serialize[Option[CommentHistory]]
   }
 
-  def updateComment(id: Long) = Action.async(validateJson[CommentRequest]) { request =>
-    serialize(tipsService.updateComment(id, request.body))
+  def updateComment(id: Long) = sessionUtil.Authenticated.async(validateJson[CommentRequest]) { implicit request =>
+    tipsService.updateComment(id, request.body, request.user)  map serialize
   }
 
 

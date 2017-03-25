@@ -1,10 +1,9 @@
 package controllers
 
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, Json, Reads, Writes}
 import play.api.mvc.Results._
 import play.api.mvc.{BodyParsers, Result}
-
-import scala.concurrent.Future
 
 object SerializationUtil {
 
@@ -19,58 +18,46 @@ object SerializationUtil {
   // (Total Overkill based on current state, but should work for a while.)
 
   // We have a convention for status codes:
-  // Any failed future is a 500 error handled by the ErrorHandler
-  // Any Success(None) is a 404
+  // None is a 404
   // Other 4?? status can be returned with an Either[Status,T] or Either[(Status,S),T] -- S is the body in the failed case.
-  // Any other Success is serialized as JSON.
+  // Any other values are 200 and serialized as JSON.
   // This can be bypassed because also:
   // Status can be returned directly -- No Body
   // (Status, T) -- Body is serialized from T
   //
   // Overloading is not idiomatic Scala but I think it's best in this case.
-  // (May want to lower to not work on futures, but for now everything is a future.)
-  def serialize[T](future: Future[T])(implicit writes: Writes[T]):Future[Result] = {
-    future map { resp => Ok(Json.toJson(resp)) }
+
+  def serialize[T](resp: T)(implicit writes: Writes[T]):Result = {
+    Ok(Json.toJson(resp))
   }
 
-  def serialize[T](future: Future[Option[T]])(implicit writes: Writes[T]):Future[Result] = {
-    future map {
-      case Some(resp) => Ok(Json.toJson(resp))
-      case None => NotFound
-    }
-  }
-
-  def serialize[T](future: Future[Either[Status,T]])(implicit writes: Writes[T]):Future[Result] = {
-    future map {
-      case Right(resp) => Ok(Json.toJson(resp))
-      case Left(result) => result
-    }
+  def serialize[T](resp: Option[T])(implicit writes: Writes[T]):Result = {
+    resp.fold[Result](NotFound) { body => Ok(Json.toJson(body)) }
   }
 
   // kind of silly, but for consistency's sake
-  def serialize(future: Future[Status]):Future[Result] = {
-    future
+  def serialize(resp: Status):Result = {
+    resp
   }
 
-  def serialize[T](future: Future[(Status,T)])(implicit writes: Writes[T]):Future[Result] = {
-    future map {
-      case (status, resp) => status(Json.toJson(resp))
+  def serialize[T](resp: (Status,T))(implicit writes: Writes[T]):Result = {
+    resp match {
+      case (status, body) => status(Json.toJson(body))
     }
   }
 
-  def serialize[T,S](future: Future[Either[(Status,S),T]])(implicit writes: Writes[T], writes2: Writes[S]):Future[Result] = {
-    future map {
-      case Right(resp) => Ok(Json.toJson(resp))
-      case Left((status, resp)) => status(Json.toJson(resp))
+  def serialize[T,S](resp: Either[(Status,S),T])(implicit writes: Writes[T], writes2: Writes[S]):Result = {
+    resp match {
+      case Right(body) => Ok(Json.toJson(body))
+      case Left((status, body)) => status(Json.toJson(body))
     }
   }
 
-  def serialize[T](future: Future[Either[Status,T]])(implicit writes: Writes[T]):Future[Result] = {
-    future map {
-      case Right(resp) => Ok(Json.toJson(resp))
+  def serialize[T](resp: Either[Status,T])(implicit writes: Writes[T], d: DummyImplicit):Result = {
+    resp match {
+      case Right(body) => Ok(Json.toJson(body))
       case Left(status) => status
     }
   }
-
 
 }

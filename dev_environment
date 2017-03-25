@@ -7,6 +7,7 @@ export TIPS_DB=tips
 export TIPS_DB_SCHEMA=tips 
 export TIPS_DB_HOSTNAME=localhost 
 export TIPS_DB_PORT=15422
+export TIPS_DB_CONNECTIONS=2
 # Should be set if postgres is to be run locally and not as a service
 export TIPS_DB_DIR=./data
 

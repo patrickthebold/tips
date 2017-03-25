@@ -11,6 +11,7 @@ libraryDependencies += filters
 libraryDependencies += jdbc
 libraryDependencies += evolutions
 libraryDependencies += "org.postgresql" % "postgresql" % "9.4.1212"
+libraryDependencies += "org.mindrot" % "jbcrypt" % "0.4"
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test
 
 // Adds additional packages into Twirl
