@@ -46,43 +46,64 @@ CREATE TABLE comments_history (
     PRIMARY KEY(hid)
 );
 
-CREATE OR REPLACE FUNCTION create_tips_history() RETURNS TRIGGER AS $tips_history$
+-- No DELETES for now!!
+
+CREATE OR REPLACE FUNCTION create_tips_defaults() RETURNS TRIGGER AS $tips_defaults$
     BEGIN
         NEW.modified = now();;
         IF (TG_OP = 'UPDATE' AND OLD.username = NEW.username) THEN
-            INSERT INTO tips_history VALUES (DEFAULT, NEW.*);;
             RETURN NEW;;
         ELSIF (TG_OP = 'INSERT') THEN
             NEW.created = now();;
-            INSERT INTO tips_history VALUES (DEFAULT, NEW.*);;
             RETURN NEW;;
         END IF;;
         RETURN NULL;; -- different user tried an update
+    END;;
+$tips_defaults$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tips_defaults
+BEFORE INSERT OR UPDATE OF message ON tips
+    FOR EACH ROW EXECUTE PROCEDURE create_tips_defaults();
+
+CREATE OR REPLACE FUNCTION create_tips_history() RETURNS TRIGGER AS $tips_history$
+    BEGIN
+        INSERT INTO tips_history VALUES (DEFAULT, NEW.*);;
+        RETURN NULL;;
     END;;
 $tips_history$ LANGUAGE plpgsql;
 
 CREATE TRIGGER tips_history
-BEFORE INSERT OR UPDATE OF message ON tips
+AFTER INSERT OR UPDATE OF message ON tips
     FOR EACH ROW EXECUTE PROCEDURE create_tips_history();
 
-CREATE OR REPLACE FUNCTION create_comments_history() RETURNS TRIGGER AS $comments_history$
+CREATE OR REPLACE FUNCTION create_comments_defaults() RETURNS TRIGGER AS $comments_defaults$
     BEGIN
         NEW.modified = now();;
         UPDATE tips SET modified = now() WHERE id = NEW.tip_id;;
         IF (TG_OP = 'UPDATE' AND OLD.username = NEW.username) THEN
-            INSERT INTO comments_history VALUES (DEFAULT, NEW.*);;
             RETURN NEW;;
         ELSIF (TG_OP = 'INSERT') THEN
             NEW.created = now();;
-            INSERT INTO comments_history VALUES (DEFAULT, NEW.*);;
             RETURN NEW;;
         END IF;;
         RETURN NULL;; -- different user tried an update
     END;;
+$comments_defaults$ LANGUAGE plpgsql;
+
+CREATE TRIGGER comments_defaults
+BEFORE INSERT OR UPDATE OF comment ON comments
+    FOR EACH ROW EXECUTE PROCEDURE create_comments_defaults();
+
+
+CREATE OR REPLACE FUNCTION create_comments_history() RETURNS TRIGGER AS $comments_history$
+    BEGIN
+        INSERT INTO comments_history VALUES (DEFAULT, NEW.*);;
+        RETURN NULL;;
+    END;;
 $comments_history$ LANGUAGE plpgsql;
 
 CREATE TRIGGER comments_history
-BEFORE INSERT OR UPDATE OF comment ON comments
+AFTER INSERT OR UPDATE OF comment ON comments
     FOR EACH ROW EXECUTE PROCEDURE create_comments_history();
 
 # --- !Downs

@@ -2,19 +2,19 @@ import play.api.http.HttpErrorHandler
 import play.api.mvc._
 import play.api.mvc.Results._
 
-import scala.concurrent._
+import scala.concurrent.Future
 import javax.inject.Singleton
 
 import play.api.libs.json.Json
+
+import util.Logging
 
 /**
   * No html responses.
   */
 @Singleton
-class ErrorHandler extends HttpErrorHandler {
+class ErrorHandler extends HttpErrorHandler with Logging {
 
-  private val logger =
-    org.slf4j.LoggerFactory.getLogger(getClass)
 
   def onClientError(request: RequestHeader, statusCode: Int, message: String) = {
     logger.info("Returning {} due to {}", statusCode, message)

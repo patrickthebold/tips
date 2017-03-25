@@ -96,6 +96,7 @@ class TipsService @Inject()(db: AsyncDatabase) {
 
   private def tipExists(id: Long, connection: Connection): Boolean = {
     val stmt = connection.prepareStatement(tipExistsQuery)
+    stmt.setLong(1, id)
     val results = stmt.executeQuery()
     results.next()
   }
@@ -137,7 +138,8 @@ class TipsService @Inject()(db: AsyncDatabase) {
       val comments = if (results.wasNull) {
         Seq()
       } else {
-        makeSeq(results) {
+        val onFirstRow = true
+        makeSeq(results, onFirstRow) {
           row => Comment(results.getLong(5), results.getString(6), results.getString(7), results.getTimestamp(8).toInstant, results.getTimestamp(9).toInstant)
         }
       }
@@ -186,7 +188,8 @@ class TipsService @Inject()(db: AsyncDatabase) {
       val comments = if (results.wasNull) {
         Seq()
       } else {
-        makeSeq(results) {
+        val onFirstRow = true
+        makeSeq(results, onFirstRow) {
           row => Comment(results.getLong(1), results.getString(2), results.getString(3), results.getTimestamp(4).toInstant, results.getTimestamp(5).toInstant)
         }
       }
@@ -196,11 +199,12 @@ class TipsService @Inject()(db: AsyncDatabase) {
     }
   }
 
-  private def newCommentImpl(id: Long, comment: CommentRequest)(connection: Connection): Option[NewCommentResponse] = {
+  private def newCommentImpl(id: Long, comment: CommentRequest, username: String)(connection: Connection): Option[NewCommentResponse] = {
     if (tipExists(id, connection)) {
       val stmt = connection.prepareStatement(newCommentQuery, Statement.RETURN_GENERATED_KEYS)
-      stmt.setString(1, comment.comment)
-      stmt.setLong(2, id)
+      stmt.setLong(1, id)
+      stmt.setString(2, comment.comment)
+      stmt.setString(3, username)
       stmt.execute()
       val results = stmt.getGeneratedKeys
       results.next()
@@ -218,7 +222,8 @@ class TipsService @Inject()(db: AsyncDatabase) {
       val historicTips = if (results.wasNull()) {
         Seq()
       } else {
-        makeSeq(results) {
+        val onFirstRow = true
+        makeSeq(results, onFirstRow) {
           results => HistoricTip(results.getString(1), results.getString(2), results.getTimestamp(3).toInstant)
         }
       }
@@ -247,7 +252,8 @@ class TipsService @Inject()(db: AsyncDatabase) {
       val historicComments = if (results.wasNull()) {
         Seq()
       } else {
-        makeSeq(results) {
+        val onFirstRow = true
+        makeSeq(results, onFirstRow) {
           results => HistoricComment(results.getString(1), results.getString(2), results.getTimestamp(3).toInstant)
         }
       }
@@ -283,7 +289,7 @@ class TipsService @Inject()(db: AsyncDatabase) {
   def getTipNoComment(id: Long): Future[Option[TipNoComment]] = db.async(getTipNoCommentImpl(id))
   def updateTip(id: Long, message: TipRequest, username: String): Future[Status] = db.async(updateTipImpl(id, message, username))
   def getComments(id: Long): Future[Option[Seq[Comment]]] = db.async(getCommentsImpl(id))
-  def newComment(id: Long, comment: CommentRequest): Future[Option[NewCommentResponse]] = db.async(newCommentImpl(id, comment))
+  def newComment(id: Long, comment: CommentRequest, username: String): Future[Option[NewCommentResponse]] = db.async(newCommentImpl(id, comment, username))
   def getTipHistory(id: Long): Future[Option[TipHistory]]  = db.async(getTipHistoryImpl(id))
 
   def getComment(id: Long): Future[Option[StandAloneComment]] = db.async(getCommentImpl(id))
@@ -291,7 +297,7 @@ class TipsService @Inject()(db: AsyncDatabase) {
   def updateComment(id: Long, comment: CommentRequest, username: String): Future[Status] = db.async(updateCommentImpl(id, comment, username))
 
   // helper
-  private def makeSeq[T](results: ResultSet, onFirstRow: Boolean = true)(f: ResultSet => T): Seq[T] = {
+  private def makeSeq[T](results: ResultSet, onFirstRow: Boolean)(f: ResultSet => T): Seq[T] = {
     val sb =  Seq.newBuilder[T]
     if (onFirstRow) {
       sb += f(results)

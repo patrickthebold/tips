@@ -4,10 +4,10 @@ import java.time.Instant
 import javax.inject.{Inject, Singleton}
 
 import play.api.Configuration
-
 import play.api.mvc.Results.Forbidden
 import play.api.mvc.Security.{AuthenticatedBuilder, AuthenticatedRequest}
 import play.api.mvc.{Request, RequestHeader, Result, Session}
+import util.Logging
 
 import scala.concurrent.Future
 
@@ -18,15 +18,16 @@ import scala.concurrent.Future
   * That seems a bit silly.
   */
 @Singleton
-class SessionUtil @Inject()(config: Configuration) {
+class SessionUtil @Inject()(config: Configuration) extends Logging {
 
   private val sessionTimeoutMillis = config.getLong("play.http.session.maxAge").getOrElse(360000L)
   def nextExpiration: (String, String) = ("expires", Instant.now.plusMillis(sessionTimeoutMillis).toString)
   private def setExpiration(session: Session): Session = session + nextExpiration
   private def getUser(request: RequestHeader): Option[String] = {
+    logger.info("Session {}", request.session)
     request.session.get("expires") map
       Instant.parse filter
-      { _.isBefore(Instant.now()) } flatMap
+      { _.isAfter(Instant.now()) } flatMap
       { _ => request.session.get("username") }
   }
 

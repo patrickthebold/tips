@@ -1,5 +1,8 @@
 logs
 target
+/python/env
+*.swp
+__*
 /.idea
 /.idea_modules
 /.classpath

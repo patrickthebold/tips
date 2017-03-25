@@ -39,7 +39,7 @@ class TipsController @Inject()(tipsService: TipsService, sessionUtil: SessionUti
   }
 
   def newComment(id: Long) = sessionUtil.Authenticated.async(validateJson[CommentRequest]) { implicit request =>
-    tipsService.newComment(id, request.body) map serialize[Option[NewCommentResponse]]
+    tipsService.newComment(id, request.body, request.user) map serialize[Option[NewCommentResponse]]
   }
 
   def getTipHistory(id: Long) = sessionUtil.Authenticated.async { implicit request =>

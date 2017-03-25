@@ -60,7 +60,12 @@ object DTOs {
     new OWrites[T] {
       override def writes(o: T) = {
         val json: JsObject = writer.writes(o)
-        json + { "tip_ref" -> JsString(controllers.routes.TipsController.getTip(o.tipId).absoluteURL()) }
+        json ++ Json.obj(
+          "tip_ref" -> JsString(controllers.routes.TipsController.getTip(o.tipId).absoluteURL()),
+          "tip_comments_ref" -> JsString(controllers.routes.TipsController.getComments(o.tipId).absoluteURL()),
+          "post_new_comment_ref" -> JsString(controllers.routes.TipsController.newComment(o.tipId).absoluteURL()),
+          "tip_history_ref" -> JsString(controllers.routes.TipsController.getTipHistory(o.tipId).absoluteURL())
+        )
       }
     }
   }
@@ -69,7 +74,10 @@ object DTOs {
     new OWrites[T] {
       override def writes(o: T) = {
         val json: JsObject = writer.writes(o)
-        json + { "comment_ref" -> JsString(controllers.routes.TipsController.getComment(o.commentId).absoluteURL()) }
+        json ++ Json.obj(
+          "comment_ref" -> JsString(controllers.routes.TipsController.getComment(o.commentId).absoluteURL()),
+          "comment_history_ref" -> JsString(controllers.routes.TipsController.getCommentHistory(o.commentId).absoluteURL())
+        )
       }
     }
   }
