@@ -24,7 +24,7 @@ class SessionUtil @Inject()(config: Configuration) extends Logging {
   def nextExpiration: (String, String) = ("expires", Instant.now.plusMillis(sessionTimeoutMillis).toString)
   private def setExpiration(session: Session): Session = session + nextExpiration
   private def getUser(request: RequestHeader): Option[String] = {
-    logger.info("Session {}", request.session)
+    logger.debug("Session {}", request.session)
     request.session.get("expires") map
       Instant.parse filter
       { _.isAfter(Instant.now()) } flatMap

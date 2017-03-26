@@ -1,4 +1,5 @@
 import requests
+
 def comment(comment):
     return {'comment': comment}
 def tip(message):
@@ -15,6 +16,8 @@ class Tips:
 
     def cred(self):
         return {'username': self.username, 'password': self.password}
+    def index(self):
+        return self.session.get(f"{self.host}/")
     def login(self):
         return self.session.post(f"{self.host}/login", json=self.cred())
     def logout(self):

@@ -21,6 +21,16 @@ def forbidden(resp):
 def not_found(resp):
     return resp.status_code == 404
 
+def test_index():
+    t = random_tips()
+    r = t.index()
+    assert ok(r)
+    r = r.json()
+    assert "login_ref" in r
+    assert "create_user_ref" in r
+    assert "logout_ref" in r
+    assert "get_tips_ref" in r
+    assert "post_new_tip_ref" in r
 
 def test_create_user():
    t = random_tips()
@@ -58,6 +68,7 @@ def test_create_tips_and_comments():
     assert 'post_new_comment_ref' in r.json()
     assert 'tip_history_ref' in r.json()
     tip_id = r.json()['tipId']
+
     # get tip
     r = api.get_tip(tip_id)
     assert ok(r)
@@ -192,3 +203,16 @@ def test_create_tips_and_comments():
     assert not_found(other_user.update_tip(next_tip_id, random_string()))
     assert forbidden(other_user.update_comment(comment_id, random_string()))
     assert not_found(other_user.update_comment(next_comment_id, random_string()))
+
+    # get all tips across users.
+    other_user.login()
+    other_user_message = random_string()
+    other_user.new_tip(other_user_message)
+    r = other_user.tips()
+    assert ok(r)
+    all_tips = r.json()
+    assert all_tips[0]['username'] == other_user.username
+    assert all_tips[0]['message'] == other_user_message
+    assert all_tips[1]['username'] == api.username
+    assert all_tips[1]['message'] == next_message
+
