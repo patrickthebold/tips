@@ -4,8 +4,9 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, Json, Reads, Writes}
 import play.api.mvc.Results._
 import play.api.mvc.{BodyParsers, Result}
+import util.Logging
 
-object SerializationUtil {
+object SerializationUtil extends Logging {
 
 
   // (n.b. From the play documentation https://www.playframework.com/documentation/2.5.x/ScalaJsonHttp)
@@ -15,12 +16,16 @@ object SerializationUtil {
     _.validate[A].asEither.left.map(e => BadRequest(JsError.toJson(e)))
   )
 
-  // (Total Overkill based on current state, but should work for a while.)
-
+  // (Hoping this convention will provide a consistent api for future work. Will need to re-evaluate later.)
+  //
   // We have a convention for status codes:
+  // Exceptions (failed futures) turn into 500 errors via the ErrorHandler.
+  //
   // None is a 404
   // Other 4?? status can be returned with an Either[Status,T] or Either[(Status,S),T] -- S is the body in the failed case.
+  //                                                                                      T body in successful case
   // Any other values are 200 and serialized as JSON.
+  //
   // This can be bypassed because also:
   // Status can be returned directly -- No Body
   // (Status, T) -- Body is serialized from T

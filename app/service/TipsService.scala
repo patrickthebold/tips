@@ -17,7 +17,7 @@ class TipsService @Inject()(db: AsyncDatabase) {
 
   private val getTipsQuery =
     """
-      |SELECT id, message, username, created, modified FROM tips;
+      |SELECT id, message, username, created, modified FROM tips ORDER BY modified DESC;
     """.stripMargin
 
   private val newTipQuery =
@@ -28,9 +28,10 @@ class TipsService @Inject()(db: AsyncDatabase) {
   private val getTipQuery =
     """
       |SELECT t.message, t.username, t.created, t.modified, c.id, c.comment, c.username, c.created, c.modified
-      |FROM tips LEFT OUTER JOIN comments c
+      |FROM tips t LEFT OUTER JOIN comments c
       |ON c.tip_id = t.id
-      |WHERE id = ?;
+      |WHERE t.id = ?
+      |ORDER BY c.modified DESC;
     """.stripMargin
 
   private val getTipNoCommentQuery =
@@ -41,14 +42,15 @@ class TipsService @Inject()(db: AsyncDatabase) {
 
   private val updateTipQuery =
     """
-      |UPDATE tips SET message = ?
+      |UPDATE tips SET message = ?, username =  ?
       |WHERE id = ?;
     """.stripMargin
 
   private val getCommentsQuery =
     """
       |SELECT c.id, c.comment, c.username, c.created, c.modified FROM tips t LEFT OUTER JOIN comments c
-      |WHERE tip_id = ?;
+      |ON c.tip_id = t.id
+      |WHERE t.id = ? ORDER BY c.modified DESC;
     """.stripMargin
 
   private val newCommentQuery =
@@ -61,24 +63,26 @@ class TipsService @Inject()(db: AsyncDatabase) {
       |SELECT h.message, h.username, h.modified FROM tips t LEFT OUTER JOIN tips_history h
       |ON t.id = h.id
       |WHERE t.id = ?
+      |ORDER BY h.modified DESC;
     """.stripMargin
 
   private val getCommentQuery =
     """
-      |SELECT comment, tip_id, username, created, modified FROM comments
+      |SELECT tip_id, comment, username, created, modified FROM comments
       |WHERE id = ?;
     """.stripMargin
 
   private val getCommentHistoryQuery =
     """
-      |SELECT h.message, h.username, h.modified FROM comments c LEFT OUTER JOIN comments_history h
+      |SELECT h.comment, h.username, h.modified FROM comments c LEFT OUTER JOIN comments_history h
       |ON c.id = h.id
       |WHERE c.id = ?
+      |ORDER BY h.modified DESC;
     """.stripMargin
 
   private val updateCommentQuery =
     """
-      |UPDATE comments SET message = ?
+      |UPDATE comments SET comment = ?, username = ?
       |WHERE id = ?;
     """.stripMargin
 
@@ -103,6 +107,7 @@ class TipsService @Inject()(db: AsyncDatabase) {
 
   private def commentExists(id: Long, connection: Connection): Boolean = {
     val stmt = connection.prepareStatement(commentExistsQuery)
+    stmt.setLong(1, id)
     val results = stmt.executeQuery()
     results.next()
   }
@@ -163,7 +168,8 @@ class TipsService @Inject()(db: AsyncDatabase) {
   private def updateTipImpl(id: Long, message: TipRequest, username: String)(connection: Connection): Status = {
     val stmt = connection.prepareStatement(updateTipQuery)
     stmt.setString(1, message.message)
-    stmt.setLong(2, id)
+    stmt.setString(2, username)
+    stmt.setLong(3, id)
     val numUpdated = stmt.executeUpdate()
     assert(numUpdated <= 1, s"We expected to update at most one tip record in the database but $numUpdated were updated!")
     if (numUpdated == 0) {
@@ -266,12 +272,13 @@ class TipsService @Inject()(db: AsyncDatabase) {
   private def updateCommentImpl(id: Long, comment: CommentRequest, username: String)(connection: Connection): Status = {
     val stmt = connection.prepareStatement(updateCommentQuery)
     stmt.setString(1, comment.comment)
-    stmt.setLong(2, id)
+    stmt.setString(2, username)
+    stmt.setLong(3, id)
     val numUpdated = stmt.executeUpdate()
     assert(numUpdated <= 1, s"We expected to update at most one comment record in the database but $numUpdated were updated!")
     if (numUpdated == 0) {
       // check if it's because we are trying to edit with a different user or if it doesn't exist.
-      if (tipExists(id, connection)) {
+      if (commentExists(id, connection)) {
         Forbidden
       } else {
         NotFound

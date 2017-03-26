@@ -17,15 +17,15 @@ object DTOs {
   // Responses
   final case class NewTipResponse(override val tipId: Long) extends ResponseWithTipId
   final case class NewCommentResponse(override val commentId: Long) extends ResponseWithCommentId
-  final case class Comment(override val commentId: Long, message: String, username: String, created: Instant, modified: Instant) extends ResponseWithCommentId
+  final case class Comment(override val commentId: Long, comment: String, username: String, created: Instant, modified: Instant) extends ResponseWithCommentId
   final case class CommentHistory(override val commentId: Long, versions: Seq[HistoricComment]) extends ResponseWithCommentId
   final case class Tip(override val tipId: Long, message: String, username: String, comments: Seq[Comment], created: Instant, modified: Instant) extends ResponseWithTipId
   final case class TipNoComment(override val tipId: Long, message: String, username: String, created: Instant, modified: Instant) extends ResponseWithTipId
   final case class TipHistory(override val tipId: Long, versions: Seq[HistoricTip]) extends ResponseWithTipId
-  final case class StandAloneComment(override val commentId: Long, tipId: Long, message: String, username: String, created: Instant, modified: Instant) extends ResponseWithTipId with ResponseWithCommentId
+  final case class StandAloneComment(override val commentId: Long, override val tipId: Long, comment: String, username: String, created: Instant, modified: Instant) extends ResponseWithTipId with ResponseWithCommentId
 
-  // Helpers
-  final case class HistoricComment(message: String, username: String, modified: Instant) // Having 'created' in the history would be confusing
+  // Nested fields
+  final case class HistoricComment(comment: String, username: String, modified: Instant) // Having 'created' in the history would be confusing
   final case class HistoricTip(message: String, username: String, modified: Instant) // Having 'created' in the history would be confusing
 
   // Serialization
