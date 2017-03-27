@@ -14,3 +14,4 @@ export TIPS_DB_DIR=./data
 # App
 export TIPS_SECRET=bananas
 export TIPS_SECURE_SESSION=false
+export TIPS_SESSION_TIMEOUT=120000 # 2 minutes
